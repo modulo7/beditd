@@ -57,6 +57,7 @@ Begin
       s[x+1]:=c;
    
    sl[y]:=s;
+   inc(fl);
 end;
 Function gs(x,y,l:word):string;
 var
@@ -78,6 +79,7 @@ end;
 
 var
   ch: chtype;
+  t:word;
 Begin
   try
   // writeln(#$E2#$98#$BA#$E2#$98#$BB);
@@ -138,6 +140,14 @@ Begin
    sl.add('sdfhfg');
    sl.add('sea\ghhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhgggggggggggggggggggggffffffffffffhhhhhhhhhhhhhhhhhhhhhhhhhhhttttttttt');
    sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+   s:='';
+   for c:=0 to 255 do Begin
+      s:=s+char(c);
+      if (c and $3F)=$3f then Begin
+         sl.add(s);
+         s:='';
+      end;
+   end;
    lw:=10;
    end;
    wx:=0;
@@ -217,18 +227,26 @@ Begin
 	   if ssy<>cy then inc(ssy)
 	   else inc(sey);
 	end;
+    KEY_PPAGE,
 	KEY_UP:Begin
-       if cy>0 then dec(fl,length(sl[cy-1]));
-	   cy:=max(0,cy-1);
-	   if cy<wy then dec(wy);
-           erase();
+       if ch=KEY_PPAGE then t:=LINES - 2 else t:=0;
+       for c:=0 to t do Begin
+          if cy>0 then dec(fl,length(sl[cy-1]));
+	      cy:=max(0,cy-1);
+	      if cy<wy then dec(wy);
+       end;
+       erase();
 	   rs;
 	end;
+    KEY_NPAGE,
 	KEY_DOWN:Begin
-       if cy<sl.Count-1 then inc(fl,length(sl[cy]));
-	   cy:=min(cy+1,sl.Count-1);
-	   if cy >wy+LINES - 2 then inc(wy);
-           erase();
+       if ch=KEY_NPAGE then t:=LINES - 2 else t:=0;
+       for c:=0 to t do Begin
+          if cy<sl.Count-1 then inc(fl,length(sl[cy]));
+	      cy:=min(cy+1,sl.Count-1);
+	      if cy >wy+LINES - 2 then inc(wy);
+       end;
+       erase();
 	   rs;
 	end;
 	KEY_LEFT:Begin
