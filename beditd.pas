@@ -25,9 +25,8 @@ const cc:array[char] of string[3]=(#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$
 
 var c:word;
     w:word;
-    x,y,viewleftx,viewtopy,cx,cy,lw,fileoffset:LongInt;
+    x,viewleftx,viewtopy,cx,cy,lw,fileoffset:LongInt;
     s:string;
-    wc:cchar_t;
     im:Boolean;
     sl:TStringList;
     ssx,ssy,sex,sey:LongInt;
@@ -165,13 +164,6 @@ Begin
    nonl();
    cbreak();
    noecho();
-  // wc.chars[0]:=WideChar(wcc[$21]);
-   //add_wch(@wc);
-   //add_wchnstr(@wcc[0],2);
-   
-//   for c:=0 to high(cc) do addnstr(@cc[c][1],ord(cc[c][0]));
-   getmaxyx(stdscr,y,x);
-   //dl('abcdefg'#0#1#2#3'ftgdfgdfgdsqawwwwwwwtgggggggggdfddghdffghcghhgfhfdfedrtdfgdsfsdfhdfghfg',1,x-1);
    refresh();
    //getch();
    repeat
