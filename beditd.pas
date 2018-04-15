@@ -136,7 +136,7 @@ begin
    end;
 end;
 
-procedure showerrormessage(message:string);
+procedure showmessage(message:string);
 begin
    erase();
    if length(message) > 29 then setlength(message,29);
@@ -148,7 +148,7 @@ var
   t:word;
   debugfile:text;
   oldfilemode: byte;
-
+  newfilename : string;
 
 
 Begin
@@ -347,7 +347,7 @@ Begin
               erase();
            except
               on E: Exception do begin
-                 showerrormessage(e.message);
+                 showmessage(e.message);
               end
            end;
            removeselection;
@@ -403,17 +403,23 @@ Begin
         //KEY_F2:attrset(A_REVERSE);
         KEY_F12:Begin
            try
-              Assign(f,gs(0,bottombarstart,'Filename:',maxlongint));
+              newfilename := gs(0,bottombarstart,'Filename:',maxlongint);
+              if fileexists(newfilename) then begin
+                 if not (upcase(gs(0,bottombarstart,newfilename + ' exits overwrite?',1)) = 'Y') then begin
+                    raise exception.create('not overwriting');
+                 end;
+              end;
+              Assign(f,newfilename);
               Rewrite(f,1);
               for c:=0 to sl.Count-1 do Begin
                  s:=sl[c];
                  BlockWrite(f,s[1],length(s));
               end;
               close(f);
-              erase();
+              showmessage('saved');
            except
               on E: Exception do begin
-                 showerrormessage(e.message);
+                 showmessage(e.message);
               end
            end;
         end;
