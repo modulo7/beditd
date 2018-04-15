@@ -263,6 +263,7 @@ Begin
          mvaddstr(bottombarstart, 30,PChar(Format(' %3d  $%0:2.2x', [ord(sl[cy][1+cx]) ] )));
       if insertmode then mvaddstr(bottombarstart, 40,'ins') else mvaddstr(bottombarstart, 40,'ovr');
       mvaddstr(bottombarstart, 45,PChar(Format(' %9d  $%0:8.8x', [fileoffset ] )));
+      mvaddstr(bottombarstart+1, 0,'F2:save|F4:enter hex|F5:enter dec|F9:reshape|F10:quit|F12:save as');
       move(cy-viewtopy,cx-viewleftx);
       refresh();
       ch := getch;
