@@ -22,7 +22,7 @@ const cc:array[char] of string[3]=(#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$
 
 var c:word;
     w:word;
-    x,y,wx,wy,cx,cy,lw,fileoffset:LongInt;
+    x,y,viewleftx,viewtopy,cx,cy,lw,fileoffset:LongInt;
     s:string;
     wc:cchar_t;
     im:Boolean;
@@ -153,8 +153,8 @@ Begin
        end;
        lw:=10;
    end;
-   wx:=0;
-   wy:=0;
+   viewleftx:=0;
+   viewtopy:=0;
    cx:=0;
    cy:=0;
    initscr();
@@ -174,25 +174,25 @@ Begin
    repeat
       x:=COLS;
       for c:=0 to min(sl.Count-1,LINES - 2) do Begin 
-         if c+wy>sl.Count-1 then Break;  
+         if c+viewtopy>sl.Count-1 then Break;  
          move(c,0);
-         if (c+wy>=ssy) and (c+wy<=sey) then
+         if (c+viewtopy>=ssy) and (c+viewtopy<=sey) then
         if ssy=sey then
-               dl(sl[c+wy],1+wx,x-1,ssx+1,sex+1)
-        else if c+wy=ssy then
-               dl(sl[c+wy],1+wx,x-1,ssx+1,length(sl[c+wy])+2)
-        else if c+wy=sey then
-               dl(sl[c+wy],1+wx,x-1,1,sex+1)
+               dl(sl[c+viewtopy],1+viewleftx,x-1,ssx+1,sex+1)
+        else if c+viewtopy=ssy then
+               dl(sl[c+viewtopy],1+viewleftx,x-1,ssx+1,length(sl[c+viewtopy])+2)
+        else if c+viewtopy=sey then
+               dl(sl[c+viewtopy],1+viewleftx,x-1,1,sex+1)
         else
-               dl(sl[c+wy],1+wx,x-1,1,length(sl[c+wy])+2)
+               dl(sl[c+viewtopy],1+viewleftx,x-1,1,length(sl[c+viewtopy])+2)
          else
-            dl(sl[c+wy],1+wx,x-1,0,0);
+            dl(sl[c+viewtopy],1+viewleftx,x-1,0,0);
       end;
       if cx<length(sl[cy]) then
          mvaddstr(LINES - 1, 30,PChar(Format(' %3d  $%0:2.2x', [ord(sl[cy][1+cx]) ] )));
       if im then mvaddstr(LINES - 1, 40,'ins') else mvaddstr(LINES - 1, 40,'   ');
       mvaddstr(LINES - 1, 45,PChar(Format(' %9d  $%0:8.8x', [fileoffset ] )));
-      move(cy-wy,cx-wx);
+      move(cy-viewtopy,cx-viewleftx);
       refresh();
       ch := getch;
       //mvaddstr(LINES - 1, 1,'                                ');
@@ -233,7 +233,7 @@ Begin
            for c:=0 to t do Begin
               if cy>0 then dec(fileoffset,length(sl[cy-1]));
               cy:=max(0,cy-1);
-              if cy<wy then dec(wy);
+              if cy<viewtopy then dec(viewtopy);
            end;
            erase();
            rs;
@@ -245,7 +245,7 @@ Begin
            for c:=0 to t do Begin
               if cy<sl.Count-1 then inc(fileoffset,length(sl[cy]));
               cy:=min(cy+1,sl.Count-1);
-              if cy >wy+LINES - 2 then inc(wy);
+              if cy >viewtopy+LINES - 2 then inc(viewtopy);
            end;
            erase();
            rs;
@@ -254,21 +254,21 @@ Begin
         KEY_LEFT:Begin
            if cx>0 then dec(fileoffset);
            cx:=max(0,cx-1);
-           if cx<wx then dec(wx);
+           if cx<viewleftx then dec(viewleftx);
            erase();
            rs;
         end;
         KEY_RIGHT:Begin
            inc(fileoffset);
            cx:=cx+1;
-           if cx-wx>x-1 then inc(wx);
+           if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
            rs;
         end;
         chtype(#$20)..chtype(#$7F):Begin
            addchar(Char(ch),cx,cy);
            inc(cx);
-           if cx-wx>x-1 then inc(wx);
+           if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
            rs;
         end;
@@ -276,26 +276,26 @@ Begin
         KEY_F4:Begin
            addchar(Char(StrToInt('$'+gs(1,LINES - 1,2))),cx,cy);
            inc(cx);
-           if cx-wx>x-1 then inc(wx);
+           if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
            rs;
         end;
         KEY_F5:Begin
            addchar(Char(StrToInt(gs(1,LINES - 1,3))),cx,cy);
            inc(cx);
-           if cx-wx>x-1 then inc(wx);
+           if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
            rs;
         end;
         KEY_HOME:Begin
-           cx:=0;wx:=0;
+           cx:=0;viewleftx:=0;
            erase();
            rs;
         end;
         KEY_END:Begin
            cx:=length(sl[cy]);
-           if cx-wx>x-1 then wx:=cx-x+1;
-           if cx<wx then wx:=max(cx,0);
+           if cx-viewleftx>x-1 then viewleftx:=cx-x+1;
+           if cx<viewleftx then viewleftx:=max(cx,0);
            erase();
         end;
         chtype(13):Begin
@@ -317,7 +317,7 @@ Begin
            s:=sl[cy];
            sl[cy]:=copy(s,0,cx-1)+copy(s,cx+1,length(s));
            cx:=max(0,cx-1);
-           if cx<wx then dec(wx);
+           if cx<viewleftx then dec(viewleftx);
            erase();
            rs;
         end;
