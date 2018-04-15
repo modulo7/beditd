@@ -32,6 +32,7 @@ var c:word;
     sl:TStringList;
     ssx,ssy,sex,sey:LongInt;
     f:file;
+    bottombarstart: longint;
 
 Procedure removeselection;
 
@@ -68,23 +69,29 @@ Begin
    inc(fileoffset); //FIXME: this may be incorrect if inserting at locations other than the cursor or not moving the cursor.
 end;
 
-Function gs(x,y:word; prompt: string; l:word):string;
+Function gs(x,y:word; prompt: string; l:longint):string;
 var
   ch: chtype;
-var s:string;
+  s:string;
+const
+  validchars = [chtype(#$20)..chtype(#$7F)]; 
 Begin
    echo();
    mvaddstr(y,x,pchar(prompt));
    x := x + length(prompt);
    ch:=mvgetch(y,x);
    s:='';
-   while ch in [chtype(#$20)..chtype(#$7F)] do Begin
+   while ch in validchars do Begin
       s:=s+char(ch);
       if length(s)>=l then Break;
       ch:=getch();
    end;
       //  mvaddstr(LINES - 1, 1,PChar(Format('name:%-14s code:%d', [ keyname(ch), ch ] )));
-   gs:=s;
+   if (ch = chtype(13)) or (ch in validchars) then begin
+      gs:=s;
+   end else begin
+      raise einouterror.create('unexpected key $'+inttohex(ord(ch),8));
+   end;
    noecho();
 end;
 
@@ -129,12 +136,19 @@ begin
    end;
 end;
 
+procedure showerrormessage(message:string);
+begin
+   erase();
+   if length(message) > 29 then setlength(message,29);
+   mvaddstr(bottombarstart, 0,PChar(message));
+end;
+
 var
   ch: chtype;
   t:word;
   debugfile:text;
   oldfilemode: byte;
-  bottombarstart: longint;
+
 
 
 Begin
@@ -322,14 +336,20 @@ Begin
            removeselection;
         end;
         KEY_IC:insertmode:=not insertmode;
-        KEY_F4:Begin
-           addcharatcursor(Char(StrToInt('$'+gs(0,bottombarstart,'enter hex:',2))));
-           erase();
-           removeselection;
-        end;
+        KEY_F4,
         KEY_F5:Begin
-           addcharatcursor(Char(StrToInt(gs(0,bottombarstart,'enter dec:',3))));
-           erase();
+           try
+              if ch = KEY_F4 then begin
+                 addcharatcursor(Char(StrToInt('$'+gs(0,bottombarstart,'enter hex:',2))));
+              end else begin
+                 addcharatcursor(Char(StrToInt(gs(0,bottombarstart,'enter dec:',3))));
+              end;
+              erase();
+           except
+              on E: Exception do begin
+                 showerrormessage(e.message);
+              end
+           end;
            removeselection;
         end;
         KEY_HOME:Begin
@@ -382,14 +402,20 @@ Begin
         end;
         //KEY_F2:attrset(A_REVERSE);
         KEY_F12:Begin
-           Assign(f,gs(0,bottombarstart,'Filename:',maxlongint));
-           Rewrite(f,1);
-           for c:=0 to sl.Count-1 do Begin
-              s:=sl[c];
-              BlockWrite(f,s[1],length(s));
+           try
+              Assign(f,gs(0,bottombarstart,'Filename:',maxlongint));
+              Rewrite(f,1);
+              for c:=0 to sl.Count-1 do Begin
+                 s:=sl[c];
+                 BlockWrite(f,s[1],length(s));
+              end;
+              close(f);
+              erase();
+           except
+              on E: Exception do begin
+                 showerrormessage(e.message);
+              end
            end;
-           close(f);
-           erase();
         end;
         KEY_RESIZE:Begin
            erase();
