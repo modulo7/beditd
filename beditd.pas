@@ -17,9 +17,12 @@ const cc:array[char] of string[3]=(#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$
 				    #$E2#$89#$A1,#$C2#$B1,#$E2#$89#$A5,#$E2#$89#$A4,#$E2#$8C#$A0,#$E2#$8C#$A1,#$C3#$B7,#$E2#$89#$88,#$C2#$B0,#$E2#$88#$99,#$C2#$B7,#$E2#$88#$9A,#$E2#$81#$BF,#$C2#$B2,#$E2#$96#$A0,#$E2#$98#$85);
 				    
     //  wcc:array[0..$FF] of word=($2205,$263A,$263B,$2665,$2666,$2663,$2660,$2022,$25D8,$25CB,$25D9,$2642,$2640,$266A,$266B,$263C,$25BA,$25C4,$2195,$203C,$00B6,$00A7,$25AC,$21A8,$2191,$2193,$2192,$2190,$221F,$2194,$25B2,$25BC,$0020,$0021,$0022,$0023,$0024,$0025,$0026,$0027,$0028,$0029,$002A,$002B,$002C,$002D,$002E,$002F,$0030,$0031,$0032,$0033,$0034,$0035,$0036,$0037,$0038,$0039,$003A,$003B,$003C,$003D,$003E,$003F,$0040,$0041,$0042,$0043,$0044,$0045,$0046,$0047,$0048,$0049,$004A,$004B,$004C,$004D,$004E,$004F,$0050,$0051,$0052,$0053,$0054,$0055,$0056,$0057,$0058,$0059,$005A,$005B,$005C,$005D,$005E,$005F,$0060,$0061,$0062,$0063,$0064,$0065,$0066,$0067,$0068,$0069,$006A,$006B,$006C,$006D,$006E,$006F,$0070,$0071,$0072,$0073,$0074,$0075,$0076,$0077,$0078,$0079,$007A,$007B,$007C,$007D,$007E,$2302,$00C7,$00FC,$00E9,$00E2,$00E4,$00E0,$00E5,$00E7,$00EA,$00EB,$00E8,$00EF,$00EE,$00EC,$00C4,$00C5,$00C9,$00E6,$00C6,$00F4,$00F6,$00F2,$00FB,$00F9,$00FF,$00D6,$00DC,$00A2,$00A3,$00A5,$20A7,$0192,$00E1,$00ED,$00F3,$00FA,$00F1,$00D1,$00AA,$00BA,$00BF,$2310,$00AC,$00BD,$00BC,$00A1,$00AB,$00BB,$2591,$2592,$2593,$2502,$2524,$2561,$2562,$2556,$2555,$2563,$2551,$2557,$255D,$255C,$255B,$2510,$2514,$2534,$252C,$251C,$2500,$253C,$255E,$255F,$255A,$2554,$2569,$2566,$2560,$2550,$256C,$2567,$2568,$2564,$2565,$2559,$2558,$2552,$2553,$256B,$256A,$2518,$250C,$2588,$2584,$258C,$2590,$2580,$03B1,$03B2,$0393,$03C0,$03A3,$03C3,$03BC,$03C4,$03A6,$0398,$03A9,$03B4,$221E,$03C6,$03B5,$2229,$2261,$00B1,$2265,$2264,$2320,$2321,$00F7,$2248,$00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$2605);
+
+	enabledebugout = false;
+
 var c:word;
     w:word;
-    x,y,wx,wy,cx,cy,lw,fl:LongInt;
+    x,y,wx,wy,cx,cy,lw,fileoffset:LongInt;
     s:string;
     wc:cchar_t;
     im:Boolean;
@@ -47,7 +50,7 @@ Begin
    attrset(A_NORMAL);
    if length(s)<o+w then addnstr(#$E2#$87#$A3,3);
 end;
-Procedure ac(c:char;x,y:word);
+Procedure addchar(c:char;x,y:word);
 var s:string;
 Begin
    s:=sl[y];
@@ -57,7 +60,7 @@ Begin
       s[x+1]:=c;
    
    sl[y]:=s;
-   inc(fl);
+   inc(fileoffset);
 end;
 Function gs(x,y,l:word):string;
 var
@@ -80,16 +83,15 @@ end;
 var
   ch: chtype;
   t:word;
+  debugfile:text;
 Begin
+  if enabledebugout then begin
+    Assign(debugfile,'ttttt');
+    Rewrite(debugfile);
+  end;
   try
-  // writeln(#$E2#$98#$BA#$E2#$98#$BB);
- //  for c:=0 to high(cc) do write(cc[c]);
- //  writeln;
-  { }
-  // for c:=$20 to $7F do write('#$'+inttohex(c,2)+',');
- //  writeln;
    im:=true;
-   fl:=0;
+   fileoffset:=0;
    sl:=TStringList.Create;
    if ParamCount =2 then Begin
       lw:=strtoint(ParamStr(2));
@@ -103,6 +105,7 @@ Begin
 	 sl.add(s);
       until w<>lw;
       close(f);
+     if sl.Count=0 then sl.add('');
    end else Begin
    sl.add('gdfgfdf');
    sl.add('sdfhfg');
@@ -188,7 +191,7 @@ Begin
       if cx<length(sl[cy]) then
          mvaddstr(LINES - 1, 30,PChar(Format(' %3d  $%0:2.2x', [ord(sl[cy][1+cx]) ] )));
       if im then mvaddstr(LINES - 1, 40,'ins') else mvaddstr(LINES - 1, 40,'   ');
-      mvaddstr(LINES - 1, 45,PChar(Format(' %9d  $%0:8.8x', [fl ] )));
+      mvaddstr(LINES - 1, 45,PChar(Format(' %9d  $%0:8.8x', [fileoffset ] )));
       move(cy-wy,cx-wx);
       refresh();
       ch := getch;
@@ -231,7 +234,7 @@ Begin
 	KEY_UP:Begin
        if ch=KEY_PPAGE then t:=LINES - 2 else t:=0;
        for c:=0 to t do Begin
-          if cy>0 then dec(fl,length(sl[cy-1]));
+          if cy>0 then dec(fileoffset,length(sl[cy-1]));
 	      cy:=max(0,cy-1);
 	      if cy<wy then dec(wy);
        end;
@@ -240,31 +243,33 @@ Begin
 	end;
     KEY_NPAGE,
 	KEY_DOWN:Begin
+	   if enabledebugout then writeln(debugfile,fileoffset,'--');
        if ch=KEY_NPAGE then t:=LINES - 2 else t:=0;
        for c:=0 to t do Begin
-          if cy<sl.Count-1 then inc(fl,length(sl[cy]));
+          if cy<sl.Count-1 then inc(fileoffset,length(sl[cy]));
 	      cy:=min(cy+1,sl.Count-1);
 	      if cy >wy+LINES - 2 then inc(wy);
        end;
        erase();
 	   rs;
+       if enabledebugout then writeln(debugfile,fileoffset,'++');
 	end;
 	KEY_LEFT:Begin
-       if cx>0 then dec(fl);
+       if cx>0 then dec(fileoffset);
 	   cx:=max(0,cx-1);
 	   if cx<wx then dec(wx);
            erase();
 	   rs;
 	end;
 	KEY_RIGHT:Begin
-       inc(fl);
+       inc(fileoffset);
 	   cx:=cx+1;
 	   if cx-wx>x-1 then inc(wx);
            erase();
 	   rs;
 	end;
 	chtype(#$20)..chtype(#$7F):Begin
-	      ac(Char(ch),cx,cy);
+	      addchar(Char(ch),cx,cy);
 	      inc(cx);
 	      if cx-wx>x-1 then inc(wx);
               erase();
@@ -272,14 +277,14 @@ Begin
 	   end;
 	KEY_IC:im:=not im;
 	KEY_F4:Begin
-	      ac(Char(StrToInt('$'+gs(1,LINES - 1,2))),cx,cy);
+	      addchar(Char(StrToInt('$'+gs(1,LINES - 1,2))),cx,cy);
 	      inc(cx);
 	      if cx-wx>x-1 then inc(wx);
               erase();
 	      rs;
 	   end;
 	KEY_F5:Begin
-	      ac(Char(StrToInt(gs(1,LINES - 1,3))),cx,cy);
+	      addchar(Char(StrToInt(gs(1,LINES - 1,3))),cx,cy);
 	      inc(cx);
 	      if cx-wx>x-1 then inc(wx);
               erase();
@@ -355,19 +360,6 @@ Begin
   finally
     endwin();
   end;
-   //writeln(x,' ',y);
- {  for c:=0 to high(cc) do Begin
-      case length(cc[c]) of
-         1:w:=ord(cc[c][1]);
-         2:w:=(ord(cc[c][1]) and $1f) shl 6 +(ord(cc[c][2]) and $3f);
-         3:w:=((ord(cc[c][1]) and $f) shl 12 +(ord(cc[c][2]) and $3f) shl 6+(ord(cc[c][3]) and $3f));
-      end;
-      write('$'+inttohex(w,4)+',');
-      
-   end;}
-  { repeat
-      readln(w);
-      if w<$800 then writeln('#$'+inttohex($C0 or (w shr 6),2)+ '#$'+inttohex($80 or (w and $3F),2))
-      else writeln('#$'+inttohex($E0 or (w shr 12),2)+ '#$'+inttohex($80 or ((w shr 6) and $3F),2)+ '#$'+inttohex($80 or (w and $3F),2));
-   until w=0;}
+  if enabledebugout then close(debugfile);
+  
 end.
