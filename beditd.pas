@@ -435,7 +435,7 @@ Begin
            erase();
         end;
         else begin
-           mvaddstr(LINES - 1, 1,PChar(Format('name:%-14s code:%d', [ keyname(ch), ch ] )));
+           showmessage(Format('unexpected key %-14s %d', [ keyname(ch), ch ] ));
         end;
       end;
    until (ch = chtype(27)) OR (ch = KEY_F(10));
