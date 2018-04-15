@@ -33,6 +33,7 @@ var c:word;
     ssx,ssy,sex,sey:LongInt;
     f:file;
     bottombarstart: longint;
+    modified : boolean;
 
 Procedure removeselection;
 
@@ -66,6 +67,7 @@ Begin
       s[x+1]:=c;
    
    sl[y]:=s;
+   modified := true;
    inc(fileoffset); //FIXME: this may be incorrect if inserting at locations other than the cursor or not moving the cursor.
 end;
 
@@ -143,6 +145,17 @@ begin
    mvaddstr(bottombarstart, 0,PChar(message));
 end;
 
+procedure savefile(newfilename : string);
+begin
+   Assign(f,newfilename);
+   Rewrite(f,1);
+   for c:=0 to sl.Count-1 do Begin
+      s:=sl[c];
+      BlockWrite(f,s[1],length(s));
+   end;
+   close(f);
+end;
+
 var
   ch: chtype;
   t:word;
@@ -150,9 +163,11 @@ var
   oldfilemode: byte;
   newfilename : string;
   filename : string;
+  action: string;
 
 Begin
   filename := '';
+  modified := false;
   if enabledebugout then begin
     Assign(debugfile,'ttttt');
     Rewrite(debugfile);
@@ -376,12 +391,15 @@ Begin
         KEY_DC:Begin
            s:=sl[cy];
            sl[cy]:=copy(s,0,cx)+copy(s,cx+2,length(s));
+           modified := true;
            erase();
            removeselection;
         end;
         KEY_BACKSPACE:Begin
            s:=sl[cy];
            sl[cy]:=copy(s,0,cx-1)+copy(s,cx+1,length(s));
+           modified := true;
+           dec(fileoffset);
            cx:=max(0,cx-1);
            if cx<viewleftx then dec(viewleftx);
            erase();
@@ -400,6 +418,8 @@ Begin
               s:=copy(s,lw+1,length(s));
               c:=c+1;
            end;
+           cy := fileoffset div lw;
+           cx := fileoffset mod lw;
            erase();
            
         end;
@@ -417,14 +437,9 @@ Begin
                     raise exception.create('not overwriting');
                  end;
               end;
-              Assign(f,newfilename);
-              Rewrite(f,1);
-              for c:=0 to sl.Count-1 do Begin
-                 s:=sl[c];
-                 BlockWrite(f,s[1],length(s));
-              end;
-              close(f);
+              savefile(newfilename);
               filename := newfilename;
+              modified := false;
               showmessage('saved');
            except
               on E: Exception do begin
@@ -435,11 +450,27 @@ Begin
         KEY_RESIZE:Begin
            erase();
         end;
+        chtype(27),
+        KEY_F10: begin
+           try
+              if not modified then break;
+              action := upcase(gs(0,bottombarstart,filename + ' modified save? (Y/N/C)',1));
+              if action = 'Y' then begin
+                 savefile(filename);
+                 break;
+              end else if action = 'N' then break;
+              showmessage('not quitting');
+           except
+              on E: Exception do begin
+                 showmessage(e.message);
+              end
+           end;  
+        end
         else begin
            showmessage(Format('unexpected key %-14s %d', [ keyname(ch), ch ] ));
         end;
       end;
-   until (ch = chtype(27)) OR (ch = KEY_F(10));
+   until false;
   finally
     endwin();
   end;
