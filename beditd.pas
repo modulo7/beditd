@@ -27,7 +27,7 @@ var c:word;
     w:word;
     x,viewleftx,viewtopy,cx,cy,lw,fileoffset:LongInt;
     s:string;
-    im:Boolean;
+    insertmode:Boolean;
     sl:TStringList;
     ssx,ssy,sex,sey:LongInt;
     f:file;
@@ -52,18 +52,20 @@ Begin
    attrset(A_NORMAL);
    if length(s)<o+w then addnstr(#$E2#$87#$A3,3);
 end;
+
 Procedure addchar(c:char;x,y:word);
 var s:string;
 Begin
    s:=sl[y];
-   if im or (x>length(s)-1) then
+   if insertmode or (x>length(s)-1) then
       s:=copy(s,0,x)+c+copy(s,x+1,length(s))
    else
       s[x+1]:=c;
    
    sl[y]:=s;
-   inc(fileoffset);
+   inc(fileoffset); //FIXME: this may be incorrect if inserting at locations other than the cursor or not moving the cursor.
 end;
+
 Function gs(x,y,l:word):string;
 var
   ch: chtype;
@@ -82,18 +84,44 @@ Begin
    noecho();
 end;
 
+procedure movetoendofline();
+var
+  cxold : longint;
+begin
+   cxold := cx;
+   cx:=length(sl[cy]);
+   if cx-viewleftx>x-1 then viewleftx:=cx-x+1;
+   if cx<viewleftx then viewleftx:=max(cx,0);
+   fileoffset := fileoffset + (cx - cxold);
+end;
+
+Procedure addcharatcursor(c:char);
+begin
+   addchar(c,cx,cy);
+   inc(cx);
+   if cx > length(sl[cy]) then begin
+      movetoendofline();
+   end else begin
+      if cx-viewleftx>x-1 then inc(viewleftx);
+   end;
+end;
+
 var
   ch: chtype;
   t:word;
   debugfile:text;
   oldfilemode: byte;
+  bottombarstart: longint;
+const
+  bottombarheight = 2;
+
 Begin
   if enabledebugout then begin
     Assign(debugfile,'ttttt');
     Rewrite(debugfile);
   end;
   try
-   im:=true;
+   insertmode:=true;
    fileoffset:=0;
    sl:=TStringList.Create;
    initscr();
@@ -177,7 +205,7 @@ Begin
    //getch();
    repeat
       x:=COLS;
-      for c:=0 to min(sl.Count-1,LINES - 2) do Begin 
+      for c:=0 to min(sl.Count-1,LINES - bottombarheight - 1) do Begin 
          if c+viewtopy>sl.Count-1 then Break;  
          move(c,0);
          if (c+viewtopy>=ssy) and (c+viewtopy<=sey) then
@@ -192,10 +220,11 @@ Begin
          else
             dl(sl[c+viewtopy],1+viewleftx,x-1,0,0);
       end;
+      bottombarstart := LINES - bottombarheight;
       if cx<length(sl[cy]) then
-         mvaddstr(LINES - 1, 30,PChar(Format(' %3d  $%0:2.2x', [ord(sl[cy][1+cx]) ] )));
-      if im then mvaddstr(LINES - 1, 40,'ins') else mvaddstr(LINES - 1, 40,'   ');
-      mvaddstr(LINES - 1, 45,PChar(Format(' %9d  $%0:8.8x', [fileoffset ] )));
+         mvaddstr(bottombarstart, 30,PChar(Format(' %3d  $%0:2.2x', [ord(sl[cy][1+cx]) ] )));
+      if insertmode then mvaddstr(bottombarstart, 40,'ins') else mvaddstr(bottombarstart, 40,'ovr');
+      mvaddstr(bottombarstart, 45,PChar(Format(' %9d  $%0:8.8x', [fileoffset ] )));
       move(cy-viewtopy,cx-viewleftx);
       refresh();
       ch := getch;
@@ -233,7 +262,7 @@ Begin
         end;
         KEY_PPAGE,
         KEY_UP:Begin
-           if ch=KEY_PPAGE then t:=LINES - 2 else t:=0;
+           if ch=KEY_PPAGE then t:=LINES -bottombarheight- 1 else t:=0;
            for c:=0 to t do Begin
               if cy>0 then dec(fileoffset,length(sl[cy-1]));
               cy:=max(0,cy-1);
@@ -245,11 +274,11 @@ Begin
         KEY_NPAGE,
         KEY_DOWN:Begin
            if enabledebugout then writeln(debugfile,fileoffset,'--');
-           if ch=KEY_NPAGE then t:=LINES - 2 else t:=0;
-           for c:=0 to t do Begin
+           if ch=KEY_NPAGE then t:=LINES -bottombarheight else t:=1;
+           for c:=0 to t- 1 do Begin
               if cy<sl.Count-1 then inc(fileoffset,length(sl[cy]));
               cy:=min(cy+1,sl.Count-1);
-              if cy >viewtopy+LINES - 2 then inc(viewtopy);
+              if cy >viewtopy+LINES -bottombarheight- 1 then inc(viewtopy);
            end;
            erase();
            removeselection;
@@ -270,36 +299,29 @@ Begin
            removeselection;
         end;
         chtype(#$20)..chtype(#$7F):Begin
-           addchar(Char(ch),cx,cy);
-           inc(cx);
-           if cx-viewleftx>x-1 then inc(viewleftx);
+           addcharatcursor(Char(ch));
            erase();
            removeselection;
         end;
-        KEY_IC:im:=not im;
+        KEY_IC:insertmode:=not insertmode;
         KEY_F4:Begin
-           addchar(Char(StrToInt('$'+gs(1,LINES - 1,2))),cx,cy);
-           inc(cx);
-           if cx-viewleftx>x-1 then inc(viewleftx);
+           addcharatcursor(Char(StrToInt('$'+gs(1,LINES - 1,2))));
            erase();
            removeselection;
         end;
         KEY_F5:Begin
-           addchar(Char(StrToInt(gs(1,LINES - 1,3))),cx,cy);
-           inc(cx);
-           if cx-viewleftx>x-1 then inc(viewleftx);
+           addcharatcursor(Char(StrToInt(gs(1,LINES - 1,3))));
            erase();
            removeselection;
         end;
         KEY_HOME:Begin
+           fileoffset := fileoffset - cx;
            cx:=0;viewleftx:=0;
            erase();
            removeselection;
         end;
         KEY_END:Begin
-           cx:=length(sl[cy]);
-           if cx-viewleftx>x-1 then viewleftx:=cx-x+1;
-           if cx<viewleftx then viewleftx:=max(cx,0);
+           movetoendofline();
            erase();
         end;
         chtype(13):Begin
