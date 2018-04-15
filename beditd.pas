@@ -149,9 +149,10 @@ var
   debugfile:text;
   oldfilemode: byte;
   newfilename : string;
-
+  filename : string;
 
 Begin
+  filename := '';
   if enabledebugout then begin
     Assign(debugfile,'ttttt');
     Rewrite(debugfile);
@@ -167,7 +168,8 @@ Begin
       end else begin
          lw:=COLS;
       end;
-      Assign(f,ParamStr(1));
+      filename := ParamStr(1);
+      Assign(f,filename);
       setlength(s,lw);
       oldfilemode := filemode;
       filemode := fmOpenRead;
@@ -400,10 +402,15 @@ Begin
            erase();
            
         end;
-        //KEY_F2:attrset(A_REVERSE);
+        KEY_F2,
         KEY_F12:Begin
            try
-              newfilename := gs(0,bottombarstart,'Filename:',maxlongint);
+              if (ch = KEY_F12) or (filename = '') then begin
+                 newfilename := gs(0,bottombarstart,'Filename:',maxlongint);
+              end else begin
+                 newfilename := filename;
+              end;
+              if newfilename = '' then raise exception.create('empty file name');
               if fileexists(newfilename) then begin
                  if not (upcase(gs(0,bottombarstart,newfilename + ' exits overwrite?',1)) = 'Y') then begin
                     raise exception.create('not overwriting');
@@ -416,6 +423,7 @@ Begin
                  BlockWrite(f,s[1],length(s));
               end;
               close(f);
+              filename := newfilename;
               showmessage('saved');
            except
               on E: Exception do begin
