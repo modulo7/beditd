@@ -31,7 +31,7 @@ var c:word;
     sl:TStringList;
     ssx,ssy,sex,sey:LongInt;
     f:file;
-Procedure rs;
+Procedure removeselection;
 
 Begin
    ssx:=cx;
@@ -86,6 +86,7 @@ var
   ch: chtype;
   t:word;
   debugfile:text;
+  oldfilemode: byte;
 Begin
   if enabledebugout then begin
     Assign(debugfile,'ttttt');
@@ -95,11 +96,19 @@ Begin
    im:=true;
    fileoffset:=0;
    sl:=TStringList.Create;
-   if ParamCount =2 then Begin
-      lw:=strtoint(ParamStr(2));
+   initscr();
+   if ParamCount >=1 then Begin
+      if paramcount >= 2 then begin
+         lw:=strtoint(ParamStr(2));
+      end else begin
+         lw:=COLS;
+      end;
       Assign(f,ParamStr(1));
       setlength(s,lw);
+      oldfilemode := filemode;
+      filemode := fmOpenRead;
       Reset(f,1);
+      filemode := oldfilemode;
       repeat 
          BlockRead(f,s[1],lw,w);
          if w=0 then Break;
@@ -159,7 +168,7 @@ Begin
    viewtopy:=0;
    cx:=0;
    cy:=0;
-   initscr();
+   
    keypad(stdscr, TRUE);
    nonl();
    cbreak();
@@ -231,7 +240,7 @@ Begin
               if cy<viewtopy then dec(viewtopy);
            end;
            erase();
-           rs;
+           removeselection;
         end;
         KEY_NPAGE,
         KEY_DOWN:Begin
@@ -243,7 +252,7 @@ Begin
               if cy >viewtopy+LINES - 2 then inc(viewtopy);
            end;
            erase();
-           rs;
+           removeselection;
            if enabledebugout then writeln(debugfile,fileoffset,'++');
         end;
         KEY_LEFT:Begin
@@ -251,21 +260,21 @@ Begin
            cx:=max(0,cx-1);
            if cx<viewleftx then dec(viewleftx);
            erase();
-           rs;
+           removeselection;
         end;
         KEY_RIGHT:Begin
            inc(fileoffset);
            cx:=cx+1;
            if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
-           rs;
+           removeselection;
         end;
         chtype(#$20)..chtype(#$7F):Begin
            addchar(Char(ch),cx,cy);
            inc(cx);
            if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
-           rs;
+           removeselection;
         end;
         KEY_IC:im:=not im;
         KEY_F4:Begin
@@ -273,19 +282,19 @@ Begin
            inc(cx);
            if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
-           rs;
+           removeselection;
         end;
         KEY_F5:Begin
            addchar(Char(StrToInt(gs(1,LINES - 1,3))),cx,cy);
            inc(cx);
            if cx-viewleftx>x-1 then inc(viewleftx);
            erase();
-           rs;
+           removeselection;
         end;
         KEY_HOME:Begin
            cx:=0;viewleftx:=0;
            erase();
-           rs;
+           removeselection;
         end;
         KEY_END:Begin
            cx:=length(sl[cy]);
@@ -298,7 +307,7 @@ Begin
        
            sl[cy]:=copy(s,0,cx);
            sl.Insert(cy+1,copy(s,cx+1,length(s)));
-           rs;
+           removeselection;
            erase();
         
         end;
@@ -306,7 +315,7 @@ Begin
            s:=sl[cy];
            sl[cy]:=copy(s,0,cx)+copy(s,cx+2,length(s));
            erase();
-           rs;
+           removeselection;
         end;
         KEY_BACKSPACE:Begin
            s:=sl[cy];
@@ -314,7 +323,7 @@ Begin
            cx:=max(0,cx-1);
            if cx<viewleftx then dec(viewleftx);
            erase();
-           rs;
+           removeselection;
         end;
         KEY_F9:Begin
            c:=0;
