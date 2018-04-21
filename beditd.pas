@@ -1,7 +1,7 @@
 PROGRAM bbbb;
 
 {$MODE OBJFPC}{$H+}
-Uses {$ifdef unix}clocale{$endif},sysutils,ncurses,math,Classes,iconvenc,ctypes;
+Uses {$ifdef unix}clocale{$endif},sysutils,ncurses,math,Classes,iconvenc,ctypes,getopts;
 
 type
   utf8char = string[3];
@@ -228,7 +228,16 @@ var
   i : longint;
   codepoint : longint;
   utf8in : utf8char;
+  o:char;
+  encoding:string;
 Begin
+  o:=#0;
+  repeat
+     o:=GetOpt('+e:');
+     case o of
+        'e':encoding:=optarg;
+     end;
+  until o=endofoptions;
 
   fillchar(reverse,65536,'A');
   for i := 0 to 255 do begin
@@ -239,9 +248,11 @@ Begin
     end;
     reverse[codepoint] := i;
   end;
-  
-  loadencoding('WINDOWS-1252');
-
+  dec(optind);
+ // writeln(optind);
+ // halt(1);
+  if encoding<>'' then
+     loadencoding(encoding);//'WINDOWS-1252'
   for i := 0 to 255 do begin
     if reverse[decodeutf8char(cc[char(i)])] <> i then begin
       writeln('incompatible encoding, duplicate chars at positions ',i,' ',reverse[decodeutf8char(cc[char(i)])]);
@@ -260,13 +271,13 @@ Begin
    fileoffset:=0;
    sl:=TStringList.Create;
    initscr();
-   if ParamCount >=1 then Begin
-      if paramcount >= 2 then begin
-         lw:=strtoint(ParamStr(2));
+   if ParamCount >=1+optind then Begin
+      if paramcount >= 2+ optind then begin
+         lw:=strtoint(ParamStr(2+optind));
       end else begin
          lw:=COLS;
       end;
-      filename := ParamStr(1);
+      filename := ParamStr(1+optind);
       Assign(f,filename);
       setlength(s,lw);
       oldfilemode := filemode;
