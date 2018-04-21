@@ -1,7 +1,7 @@
 PROGRAM bbbb;
 
 {$MODE OBJFPC}{$H+}
-Uses {$ifdef unix}clocale{$endif},sysutils,ncurses,math,Classes;
+Uses {$ifdef unix}clocale{$endif},sysutils,ncurses,math,Classes,iconvenc,ctypes;
 
 type
   utf8char = string[3];
@@ -176,6 +176,47 @@ begin
    close(f);
 end;
 
+procedure loadencoding(encoding : string);
+var 
+  icnv : iconv_t;
+  inbuf,outbuf : pchar;
+  inbytesleft, outbytesleft : csize_t;
+  c : char;
+  utf8c : utf8char;
+  codepoint : longint;
+  oldcodepoint : longint;
+Begin
+  icnv := iconv_open('UTF-8',pchar(encoding));
+  for c := #0 to #255 do begin
+    inbytesleft := 1;
+    outbytesleft := 3;
+    inbuf := @c;
+    outbuf := @utf8c[1];
+    iconv(icnv,@inbuf,@inbytesleft,@outbuf,@outbytesleft);
+    setlength(utf8c,3-outbytesleft);
+    codepoint := decodeutf8char(utf8c);
+    if ((codepoint >= $20) and (codepoint <= $7E)) or ((codepoint >=$A1) and (codepoint <= $FFFF)) then begin
+      //writeln('accepting codepoint ',codepoint);
+      if cc[c] <> utf8c then begin
+        oldcodepoint := decodeutf8char(cc[c]);
+        if reverse[codepoint] = ord('A') then begin
+          reverse[oldcodepoint] := ord('A');
+        end else begin
+          cc[char(reverse[codepoint])] := cc[c];
+          reverse[oldcodepoint] := reverse[codepoint];          
+        end;
+        reverse[codepoint] := byte(c);
+        cc[c] := utf8c;
+
+      end;
+    end else begin
+      //writeln('rejecting codepoint ',codepoint);
+    end
+    //writeln(length(utf8c));
+  end;
+  iconv_close(icnv);
+end;
+
 var
   ch: chtype;
   t:word;
@@ -188,6 +229,7 @@ var
   codepoint : longint;
   utf8in : utf8char;
 Begin
+
   fillchar(reverse,65536,'A');
   for i := 0 to 255 do begin
     codepoint := decodeutf8char(cc[char(i)]);
@@ -197,10 +239,16 @@ Begin
     end;
     reverse[codepoint] := i;
   end;
-  {for i := 0 to 255 do begin
-    writeln(reverse[decodeutf8char(cc[char(i)])]);
+  
+  loadencoding('WINDOWS-1252');
+
+  for i := 0 to 255 do begin
+    if reverse[decodeutf8char(cc[char(i)])] <> i then begin
+      writeln('incompatible encoding, duplicate chars at positions ',i,' ',reverse[decodeutf8char(cc[char(i)])]);
+      halt(1);
+    end
   end;
-  halt(1);}
+
   filename := '';
   modified := false;
   if enabledebugout then begin
