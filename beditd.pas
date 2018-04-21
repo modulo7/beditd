@@ -195,7 +195,11 @@ Begin
     iconv(icnv,@inbuf,@inbytesleft,@outbuf,@outbytesleft);
     setlength(utf8c,3-outbytesleft);
     codepoint := decodeutf8char(utf8c);
-    if ((codepoint >= $20) and (codepoint <= $7E)) or ((codepoint >=$A1) and (codepoint <= $FFFF)) then begin
+    if (c = 'A') and (codepoint <> ord('A')) then begin
+      writeln('encoding must be ascii based');
+      halt(1);
+    end;
+    if ((codepoint >= $20) and (codepoint <= $7E) and (codepoint = ord(c))) or ((codepoint >=$A1) and (codepoint <= $FFFF)) then begin
       //writeln('accepting codepoint ',codepoint);
       if cc[c] <> utf8c then begin
         oldcodepoint := decodeutf8char(cc[c]);
