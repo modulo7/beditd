@@ -234,12 +234,15 @@ var
   utf8in : utf8char;
   o:char;
   encoding:string;
+  enabletestdata:boolean;
 Begin
+  enabletestdata := false;
   o:=#0;
   repeat
-     o:=GetOpt('+e:');
+     o:=GetOpt('+e:t');
      case o of
         'e':encoding:=optarg;
+        't':enabletestdata := true;
      end;
   until o=endofoptions;
 
@@ -297,51 +300,56 @@ Begin
       close(f);
       if sl.Count=0 then sl.add('');
    end else Begin
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\g');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       sl.add('gdfgfdf');
-       sl.add('sdfhfg');
-       sl.add('sea\ghhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhgggggggggggggggggggggffffffffffffhhhhhhhhhhhhhhhhhhhhhhhhhhhttttttttt');
-       sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
-       s:='';
-       for c:=0 to 255 do Begin
-          s:=s+char(c);
-          if (c and $3F)=$3f then Begin
-             sl.add(s);
-             s:='';
+       if enabletestdata then begin
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\g');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          sl.add('gdfgfdf');
+          sl.add('sdfhfg');
+          sl.add('sea\ghhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhgggggggggggggggggggggffffffffffffhhhhhhhhhhhhhhhhhhhhhhhhhhhttttttttt');
+          sl.add('a'#1#2#3#4#5#6#7#8#9#10'z');
+          s:='';
+          for c:=0 to 255 do Begin
+             s:=s+char(c);
+             if (c and $3F)=$3f then Begin
+                sl.add(s);
+                s:='';
+             end;
           end;
-       end;
-       lw:=10;
+          lw:=10;
+       end else begin
+          sl.add('');
+          lw:=COLS;
+       end
    end;
    viewleftx:=0;
    viewtopy:=0;
