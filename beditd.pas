@@ -389,19 +389,36 @@ Begin
         
         end;
         KEY_DC:Begin
-           s:=sl[cy];
-           sl[cy]:=copy(s,0,cx)+copy(s,cx+2,length(s));
-           modified := true;
+           if cx>=length(sl[cy])then Begin
+              if cy<sl.Count-1 then Begin
+                 sl[cy]:=sl[cy]+sl[cy+1];
+                 sl.Delete(cy+1);
+              end;
+           end else Begin
+              s:=sl[cy];
+              sl[cy]:=copy(s,0,cx)+copy(s,cx+2,length(s));
+              modified := true;
+           end;
            erase();
            removeselection;
         end;
         KEY_BACKSPACE:Begin
-           s:=sl[cy];
-           sl[cy]:=copy(s,0,cx-1)+copy(s,cx+1,length(s));
-           modified := true;
-           dec(fileoffset);
-           cx:=max(0,cx-1);
-           if cx<viewleftx then dec(viewleftx);
+           if cx=0 then Begin
+              if cy>0 then Begin
+                 dec(cy);
+                 cx:=length(sl[cy]);
+                 if cx-viewleftx>x-1 then viewleftx:=cx-x+1;
+                 sl[cy]:=sl[cy]+sl[cy+1];
+                 sl.Delete(cy+1);
+              end;
+           end else Begin
+              s:=sl[cy];
+              sl[cy]:=copy(s,0,cx-1)+copy(s,cx+1,length(s));
+              modified := true;
+              dec(fileoffset);
+              cx:=max(0,cx-1);
+              if cx<viewleftx then dec(viewleftx);
+           end;
            erase();
            removeselection;
         end;
