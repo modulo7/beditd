@@ -1,4 +1,4 @@
-PROGRAM bbbb;
+PROGRAM beditd;
 
 {$MODE OBJFPC}{$H+}
 Uses {$ifdef unix}clocale{$endif},sysutils,ncurses,math,Classes,iconvenc,ctypes,getopts;
