@@ -2,7 +2,11 @@ PROGRAM bbbb;
 
 {$MODE OBJFPC}{$H+}
 Uses {$ifdef unix}clocale{$endif},sysutils,ncurses,math,Classes;
-const cc:array[char] of string[3]=(#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$99#$A5,#$E2#$99#$A6,#$E2#$99#$A3,#$E2#$99#$A0,#$E2#$80#$A2,#$E2#$97#$98,#$E2#$97#$8B,#$E2#$97#$99,#$E2#$99#$82,#$E2#$99#$80,#$E2#$99#$AA,#$E2#$99#$AB,#$E2#$98#$BC,
+
+type
+  utf8char = string[3];
+
+const cc:array[char] of utf8char= (#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$99#$A5,#$E2#$99#$A6,#$E2#$99#$A3,#$E2#$99#$A0,#$E2#$80#$A2,#$E2#$97#$98,#$E2#$97#$8B,#$E2#$97#$99,#$E2#$99#$82,#$E2#$99#$80,#$E2#$99#$AA,#$E2#$99#$AB,#$E2#$98#$BC,
                                    #$E2#$96#$BA,#$E2#$97#$84,#$E2#$86#$95,#$E2#$80#$BC,#$C2#$B6    ,#$C2#$A7    ,#$E2#$96#$AC,#$E2#$86#$A8,#$E2#$86#$91,#$E2#$86#$93,#$E2#$86#$92,#$E2#$86#$90,#$E2#$88#$9F,#$E2#$86#$94,#$E2#$96#$B2,#$E2#$96#$BC,
                                    #$20        ,#$21        ,#$22        ,#$23        ,#$24        ,#$25        ,#$26        ,#$27        ,#$28        ,#$29        ,#$2A        ,#$2B        ,#$2C        ,#$2D        ,#$2E        ,#$2F        ,
                                    #$30        ,#$31        ,#$32        ,#$33        ,#$34        ,#$35        ,#$36        ,#$37        ,#$38        ,#$39        ,#$3A        ,#$3B        ,#$3C        ,#$3D        ,#$3E        ,#$3F        ,
@@ -22,8 +26,10 @@ const cc:array[char] of string[3]=(#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$
     //  wcc:array[0..$FF] of word=($2205,$263A,$263B,$2665,$2666,$2663,$2660,$2022,$25D8,$25CB,$25D9,$2642,$2640,$266A,$266B,$263C,$25BA,$25C4,$2195,$203C,$00B6,$00A7,$25AC,$21A8,$2191,$2193,$2192,$2190,$221F,$2194,$25B2,$25BC,$0020,$0021,$0022,$0023,$0024,$0025,$0026,$0027,$0028,$0029,$002A,$002B,$002C,$002D,$002E,$002F,$0030,$0031,$0032,$0033,$0034,$0035,$0036,$0037,$0038,$0039,$003A,$003B,$003C,$003D,$003E,$003F,$0040,$0041,$0042,$0043,$0044,$0045,$0046,$0047,$0048,$0049,$004A,$004B,$004C,$004D,$004E,$004F,$0050,$0051,$0052,$0053,$0054,$0055,$0056,$0057,$0058,$0059,$005A,$005B,$005C,$005D,$005E,$005F,$0060,$0061,$0062,$0063,$0064,$0065,$0066,$0067,$0068,$0069,$006A,$006B,$006C,$006D,$006E,$006F,$0070,$0071,$0072,$0073,$0074,$0075,$0076,$0077,$0078,$0079,$007A,$007B,$007C,$007D,$007E,$2302,$00C7,$00FC,$00E9,$00E2,$00E4,$00E0,$00E5,$00E7,$00EA,$00EB,$00E8,$00EF,$00EE,$00EC,$00C4,$00C5,$00C9,$00E6,$00C6,$00F4,$00F6,$00F2,$00FB,$00F9,$00FF,$00D6,$00DC,$00A2,$00A3,$00A5,$20A7,$0192,$00E1,$00ED,$00F3,$00FA,$00F1,$00D1,$00AA,$00BA,$00BF,$2310,$00AC,$00BD,$00BC,$00A1,$00AB,$00BB,$2591,$2592,$2593,$2502,$2524,$2561,$2562,$2556,$2555,$2563,$2551,$2557,$255D,$255C,$255B,$2510,$2514,$2534,$252C,$251C,$2500,$253C,$255E,$255F,$255A,$2554,$2569,$2566,$2560,$2550,$256C,$2567,$2568,$2564,$2565,$2559,$2558,$2552,$2553,$256B,$256A,$2518,$250C,$2588,$2584,$258C,$2590,$2580,$03B1,$03B2,$0393,$03C0,$03A3,$03C3,$03BC,$03C4,$03A6,$0398,$03A9,$03B4,$221E,$03C6,$03B5,$2229,$2261,$00B1,$2265,$2264,$2320,$2321,$00F7,$2248,$00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$2605);
 
     enabledebugout = false;
+    
     bottombarheight = 2;
-
+var
+  reverse : array[0..65535] of byte;
 var c:word;
     w:word;
     x,viewleftx,viewtopy,cx,cy,lw,fileoffset:LongInt;
@@ -42,6 +48,18 @@ Begin
    sex:=cx;
    ssy:=cy;
    sey:=cy;
+end;
+
+function decodeutf8char(utf8 : utf8char) : longint;
+begin
+  result := -1;
+  if length(utf8) = 1 then begin
+    if ord(utf8[1]) <= $7F then result := ord(utf8[1]);
+  end else if length(utf8) = 2 then begin
+    if (ord(utf8[1]) in [194..223]) and (ord(utf8[2]) in [128..191]) then result := ((ord(utf8[1]) and $1F) shl 6) + (ord(utf8[2]) and $3F)
+  end else if length(utf8) = 3 then begin
+    if (ord(utf8[1]) in [224..239]) and (ord(utf8[2]) in [128..191]) and (ord(utf8[3]) in [128..191]) then result := ((ord(utf8[1]) and $0F) shl 12) + ((ord(utf8[2]) and $3F) shl 6) + (ord(utf8[3]) and $3F)
+  end;
 end;
     
 Procedure dl(s:string;o,w,hs,he:word);
@@ -141,6 +159,8 @@ end;
 procedure showmessage(message:string);
 begin
    erase();
+   //uncomment line below to add messages to data buffer for debugging
+   //sl.add(message);
    if length(message) > 29 then setlength(message,29);
    mvaddstr(bottombarstart, 0,PChar(message));
 end;
@@ -164,8 +184,23 @@ var
   newfilename : string;
   filename : string;
   action: string;
-
+  i : longint;
+  codepoint : longint;
+  utf8in : utf8char;
 Begin
+  fillchar(reverse,65536,'A');
+  for i := 0 to 255 do begin
+    codepoint := decodeutf8char(cc[char(i)]);
+    if codepoint < 0 then begin
+      writeln('could not decode utf-8 sequence');
+      halt(1);
+    end;
+    reverse[codepoint] := i;
+  end;
+  {for i := 0 to 255 do begin
+    writeln(reverse[decodeutf8char(cc[char(i)])]);
+  end;
+  halt(1);}
   filename := '';
   modified := false;
   if enabledebugout then begin
@@ -353,6 +388,31 @@ Begin
            erase();
            removeselection;
         end;
+        chtype(#$C2)..chtype(#$DF),chtype(#$E0)..chtype(#$EF):Begin
+           if ch in [$C2 .. $DF] then setlength(utf8in,2) else setlength(utf8in,3);
+           utf8in[1] := char(ch);
+           ch := getch;
+           if not (ch in [$80 .. $BF]) then ch := 0;
+           utf8in[2] := char(ch);
+           if (ch <> 0) and (length(utf8in) = 3) then begin
+             ch := getch;
+             if not (ch in [$80 .. $BF]) then ch := 0;
+             utf8in[3] := char(ch);
+           end;
+           codepoint := decodeutf8char(utf8in);
+           if codepoint < 0 then begin
+             showmessage('unable to decode utf-8 ');
+           end else begin
+             ch := reverse[codepoint];
+             if ch = ord('A') then begin
+               showmessage('unable to reverse-map unicode');
+             end else begin
+               addcharatcursor(Char(ch));
+               erase();
+               removeselection;
+             end
+           end
+        end;
         KEY_IC:insertmode:=not insertmode;
         KEY_F4,
         KEY_F5:Begin
@@ -484,7 +544,7 @@ Begin
            end;  
         end
         else begin
-           showmessage(Format('unexpected key %-14s %d', [ keyname(ch), ch ] ));
+           showmessage(Format('unexpected key %d %-14s', [ ch , keyname(ch)  ] ));
         end;
       end;
    until false;
