@@ -1,0 +1,20 @@
+Beditd -- Binary file editor inspired by DOS edit
+
+usage:
+
+beditd [-e <encoding>] [<file> [<width>]]
+
+Beditd is a binary file editor where each byte in the file is represented by a
+character on the screen. It is not a hex editor or a text editor. It requires a
+UTF-8 terminal.
+
+Users can navigate the file and insert text much as they would in a text editor.
+Arbitary byte values can also be inserted in either hex or decimal.
+
+Function keys control the editor, these are listed at the bottom along with the
+byte value at the cursor and the current location in the file.
+
+The default symbol set is based on (but not identical to) MS DOS code page 437.
+Alternatively the user may specify a single-byte ASCII-based encoding supported
+by iconv and the editor will use it to generate a symbol set.
+
