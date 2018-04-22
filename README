@@ -1,5 +1,13 @@
 Beditd -- Binary file editor inspired by DOS edit
 
+Compilation:
+
+Install freepascal and development headers for ncursesw e.g.
+
+apt-get install fpc libncursesw5-dev
+
+Then to build the program simply run make
+
 usage:
 
 beditd [-e <encoding>] [<file> [<width>]]
