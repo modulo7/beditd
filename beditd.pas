@@ -616,7 +616,7 @@ Begin
         KEY_RESIZE:Begin
            erase();
         end;
-        chtype(27),
+        //chtype(27),
         KEY_F10: begin
            try
               if not modified then break;
