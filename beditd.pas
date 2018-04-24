@@ -396,13 +396,13 @@ Begin
          if c+viewtopy>sl.Count-1 then Break;  
          move(c,0);
          if (c+viewtopy>=ssy) and (c+viewtopy<=sey) then
-        if ssy=sey then
+            if ssy=sey then
                dl(sl[c+viewtopy],1+viewleftx,x-1,ssx+1,sex+1)
-        else if c+viewtopy=ssy then
+            else if c+viewtopy=ssy then
                dl(sl[c+viewtopy],1+viewleftx,x-1,ssx+1,length(sl[c+viewtopy])+2)
-        else if c+viewtopy=sey then
+            else if c+viewtopy=sey then
                dl(sl[c+viewtopy],1+viewleftx,x-1,1,sex+1)
-        else
+            else
                dl(sl[c+viewtopy],1+viewleftx,x-1,1,length(sl[c+viewtopy])+2)
          else
             dl(sl[c+viewtopy],1+viewleftx,x-1,0,0);
