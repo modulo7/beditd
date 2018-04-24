@@ -16,11 +16,6 @@ Beditd is a binary file editor where each byte in the file is represented by a
 character on the screen. It is not a hex editor or a text editor. It requires a
 UTF-8 terminal.
 
-Note that putty claims to be an xterm but by default does not use xterm escape
-sequences for function keys. To use this editor under xterm select "xterm r6"
-in the "terminal"->"keyboard"->"the function keys and keyboard" section of 
-the putty configuration.
-
 Users can navigate the file and insert text much as they would in a text editor.
 Arbitary byte values can also be inserted in either hex or decimal.
 

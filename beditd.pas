@@ -380,6 +380,16 @@ Begin
    noecho();
    refresh();
    //getch();
+   
+   //putty claims to be an xterm but (by default) uses different escape
+   //sequences for F1 to F4 define them here so putty works out of the box.
+   if termname() = 'xterm' then begin
+      define_key(#27'[11~',KEY_F1);
+      define_key(#27'[12~',KEY_F2);
+      define_key(#27'[13~',KEY_F3);
+      define_key(#27'[14~',KEY_F4);
+   end;
+   
    repeat
       x:=COLS;
       for c:=0 to min(sl.Count-1,LINES - bottombarheight - 1) do Begin 
