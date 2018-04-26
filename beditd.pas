@@ -348,11 +348,6 @@ var
   enablecontrolpictures : boolean;
 Begin
   enablecontrolpictures := false;
-  for i := 0 to $1F do begin
-     cc[char(i)] := #$e2 + char($90 + (i shr 6))+char($80+(i and $3f));
-     //writeln(length(cc[char(i)]));
-  end;
-  //halt(1);
   enabletestdata := false;
   textmode := false;
   lineending := '';
@@ -362,14 +357,14 @@ Begin
      case o of
         'e':encoding:=optarg;
         't':enabletestdata := true;
-        'p':encablecontrolpictures := true;
+        'p':enablecontrolpictures := true;
      end;
   until o=endofoptions;
 
   if enablecontrolpictures then for i := 0 to $1F do begin
      cc[char(i)] := #$e2 + char($90 + (i shr 6))+char($80+(i and $3f));
      //writeln(length(cc[char(i)]));
-  end
+  end;
 
   fillchar(reverse,65536,'A');
   for i := 0 to 255 do begin
