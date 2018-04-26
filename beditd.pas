@@ -543,6 +543,8 @@ Begin
        
            sl[cy]:=copy(s,0,cx);
            sl.Insert(cy+1,copy(s,cx+1,length(s)));
+           cy := cy + 1;
+           cx := 0;
            removeselection;
            erase();
         
