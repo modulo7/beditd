@@ -58,6 +58,8 @@ var c:word;
     f:file;
     bottombarstart: longint;
     modified : boolean;
+    textmode: boolean;
+    lineending : string;
 
 Procedure removeselection;
 
@@ -239,11 +241,97 @@ Begin
   iconv_close(icnv);
 end;
 
+type
+   tlineendingcounts = record
+      crcount,lfcount,crlfcount : longint;
+   end;
+   plineendingcounts = ^tlineendingcounts;
+
+function processtext(lip: string; s: string; lec : plineendingcounts) : string;
+var
+  lipptr : longint;
+  i : integer;
+begin  
+   lip := lip + s;
+   lipptr := 1;
+   for i := 1 to length(lip) do begin
+      if (lip[i] = #10) or ((lip[i] = #13 ) and (i < length(lip)) and (lip[i+1] <> #10)) then begin
+         if assigned(lec) then begin
+            if lip[i] = #13 then begin 
+               lec^.crcount := lec^.crcount + 1;
+            end else if (i > 1) and (lip[i-1] = #13) then begin
+               lec^.crlfcount := lec^.crlfcount + 1;
+            end else begin
+               lec^.lfcount := lec^.lfcount +1;
+            end;
+         end;
+         sl.add(copy(lip,lipptr,i-lipptr+1));
+         lipptr := i+1;
+      end;
+   end;
+   result := copy(lip,lipptr,maxlongint);
+end;
+
+
+procedure loadfile(filename: string; widthortype : string);
+var
+  lec : tlineendingcounts;
+  lip : string;
+  oldfilemode: byte;
+begin
+   if upcase(widthortype) = 'T' then begin
+      textmode := true;
+      lw := 4096;
+   end else begin;
+      lw:=strtoint(widthortype);
+   end;
+      
+   Assign(f,filename);
+   setlength(s,lw);
+   oldfilemode := filemode;
+   filemode := fmOpenRead;
+   Reset(f,1);
+   filemode := oldfilemode;
+   lip := '';
+   lec.crcount := 0;
+   lec.lfcount := 0;
+   lec.crlfcount := 0;
+   repeat 
+      BlockRead(f,s[1],lw,w);
+      if w=0 then Break;
+      if w<>lw then setlength(s,w);
+      if textmode then begin
+         lip := processtext(lip,s,@lec);
+         
+      end else begin
+         sl.add(s);
+      end;
+   until w<>lw;
+   if textmode then begin
+      sl.add(lip);
+      if upcase(widthortype) = 'TCRLF' then begin
+         lineending := #13#10;
+      end else if upcase(widthortype) = 'TCR' then begin
+         lineending := #13;
+      end else if upcase(widthortype) = 'TLF' then begin
+         lineending := #10;
+      end else if (lec.crlfcount >= lec.lfcount) and (lec.crlfcount >= lec.crcount) then begin
+         lineending := #13#10;
+      end else if lec.lfcount >= lec.crcount then begin
+         lineending := #10;
+      end else begin
+         lineending := #13;
+      end
+    end;
+    close(f);
+    if sl.Count=0 then sl.add('');
+   
+end;
+
 var
   ch: chtype;
   t:word;
   debugfile:text;
-  oldfilemode: byte;
   newfilename : string;
   filename : string;
   action: string;
@@ -253,8 +341,13 @@ var
   o:char;
   encoding:string;
   enabletestdata:boolean;
+  oldsl : tstringlist;
+  lip : string;
+  tempfileoffset : integer;
 Begin
   enabletestdata := false;
+  textmode := false;
+  lineending := '';
   o:=#0;
   repeat
      o:=GetOpt('+e:t');
@@ -297,27 +390,13 @@ Begin
    sl:=TStringList.Create;
    initscr();
    if ParamCount >=1+optind then Begin
-      if paramcount >= 2+ optind then begin
-         lw:=strtoint(ParamStr(2+optind));
-      end else begin
-         lw:=COLS;
-      end;
       filename := ParamStr(1+optind);
-      Assign(f,filename);
-      setlength(s,lw);
-      oldfilemode := filemode;
-      filemode := fmOpenRead;
-      Reset(f,1);
-      filemode := oldfilemode;
-      repeat 
-         BlockRead(f,s[1],lw,w);
-         if w=0 then Break;
-         if w<>lw then setlength(s,w);
-         sl.add(s);
-      until w<>lw;
-      close(f);
-      if sl.Count=0 then sl.add('');
-   end else Begin
+      if paramcount >= 2+ optind then begin
+         loadfile(filename,paramstr(2+optind));
+      end else begin
+         loadfile(filename,inttostr(COLS));
+      end;
+    end else Begin
        if enabletestdata then begin
           sl.add('gdfgfdf');
           sl.add('sdfhfg');
@@ -545,6 +624,15 @@ Begin
            sl.Insert(cy+1,copy(s,cx+1,length(s)));
            cy := cy + 1;
            cx := 0;
+           if textmode then begin
+              if length(sl[cy]) = 0 then begin
+                 sl[cy] := lineending;
+              end else begin
+                 sl[cy-1] := sl[cy-1] + lineending;
+                 fileoffset := fileoffset + length(lineending);
+              end;
+              modified := true;
+           end;
            removeselection;
            erase();
         
@@ -584,22 +672,42 @@ Begin
            removeselection;
         end;
         KEY_F9:Begin
-           c:=0;
-           s:='';
-           while (c<sl.Count) do Begin
-              while length(s)<lw do Begin
-                 s:=s+sl[c];
-                 sl.Delete(c);
-                 if c>=sl.Count then Break;
+           if textmode then begin
+              oldsl := sl;
+              sl := tstringlist.create();
+              lip := '';
+              for i := 0 to oldsl.count -1 do begin
+                 lip := processtext(lip,oldsl[i],nil);
               end;
-              sl.Insert(c,copy(s,0,lw));
-              s:=copy(s,lw+1,length(s));
-              c:=c+1;
+              sl.add(lip);
+              oldsl.free;
+              i := 0;
+              tempfileoffset := 0;
+              while tempfileoffset < fileoffset do begin
+                 tempfileoffset := tempfileoffset + length(sl[i]);
+                 i := i + 1;;
+              end;
+              i := i - 1;
+              tempfileoffset := tempfileoffset - length(sl[i]);
+              cy := i;
+              cx := fileoffset - tempfileoffset;
+           end else begin
+              c:=0;
+              s:='';
+              while (c<sl.Count) do Begin
+                 while length(s)<lw do Begin
+                    s:=s+sl[c];
+                    sl.Delete(c);
+                    if c>=sl.Count then Break;
+                 end;
+                 sl.Insert(c,copy(s,0,lw));
+                 s:=copy(s,lw+1,length(s));
+                 c:=c+1;
+              end;
+              cy := fileoffset div lw;
+              cx := fileoffset mod lw;
            end;
-           cy := fileoffset div lw;
-           cx := fileoffset mod lw;
            erase();
-           
         end;
         KEY_F2,
         KEY_F12:Begin

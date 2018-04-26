@@ -10,7 +10,7 @@ Then to build the program simply run make
 
 usage:
 
-beditd [-e <encoding>] [<file> [<width>]]
+beditd [-e <encoding>] [<file> [<width or mode>]]
 
 Beditd is a binary file editor where each byte in the file is represented by a
 character on the screen. It is not a hex editor or a text editor. It requires a
@@ -26,3 +26,24 @@ The default symbol set is based on (but not identical to) MS DOS code page 437.
 Alternatively the user may specify a single-byte ASCII-based encoding supported
 by iconv and the editor will use it to generate a symbol set.
 
+The <width or mode> setting can be either a width in characters or one of the
+"text modes" discussed below. If it is not specified it defaults to the width of your
+terminal.
+
+Normally beditd splits the file into lines of the specified width without regard
+to any line ending characters. A user-specified width is useful for files
+containing fixed-size records as the user can specify a line width matching the
+size of the record and then see one record on each line.
+
+Beditd also offers "text modes", in these modes rather than using fixed length
+lines beditd will split lines after line ending characters. Also pressing the
+enter key will insert a line ending in addition to splitting the line.
+
+T : text with auto-detected line endings.
+TCR : text with CR line endings
+TLF : text with LF line endings
+TCRLF : text with CRLF line endings
+
+The only difference between the modes is the type of line ending inserted when
+the enter key is pressed. Lines will still be broken after all three types of
+line ending.
