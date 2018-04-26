@@ -37,7 +37,10 @@ size of the record and then see one record on each line.
 
 Beditd also offers "text modes", in these modes rather than using fixed length
 lines beditd will split lines after line ending characters. Also pressing the
-enter key will insert a line ending in addition to splitting the line.
+enter key will insert a line ending in addition to splitting the line. This mode
+is intended to facilitate editing files that use a text-based structure but may
+contain arbitary binary data, it is not intended to be a general purpose text
+editor.
 
 T : text with auto-detected line endings.
 TCR : text with CR line endings
@@ -45,5 +48,5 @@ TLF : text with LF line endings
 TCRLF : text with CRLF line endings
 
 The only difference between the modes is the type of line ending inserted when
-the enter key is pressed. Lines will still be broken after all three types of
-line ending.
+the enter key is pressed. When reading or reshaping lines will still be broken
+after all three types of line ending.
