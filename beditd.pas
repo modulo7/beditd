@@ -361,9 +361,12 @@ Begin
      end;
   until o=endofoptions;
 
-  if enablecontrolpictures then for i := 0 to $1F do begin
-     cc[char(i)] := #$e2 + char($90 + (i shr 6))+char($80+(i and $3f));
-     //writeln(length(cc[char(i)]));
+  if enablecontrolpictures then begin
+     for i := 0 to $1F do begin
+        cc[char(i)] := #$e2#$90 + char($80+(i and $3f));
+        //writeln(length(cc[char(i)]));
+     end;
+     cc[#$7F] := #$e2#$90#$A1
   end;
 
   fillchar(reverse,65536,'A');

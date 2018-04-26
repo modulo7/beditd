@@ -27,7 +27,7 @@ Alternatively the user may specify a single-byte ASCII-based encoding supported
 by iconv and the editor will use it to generate a symbol set. 
 
 The "p" option uses the "control pictures" unicode characters instead of the 
-default symbols to represent byte values $00 to $1F.
+default symbols to represent byte values $00 to $1F and 7F.
 
 The <width or mode> setting can be either a width in characters or one of the
 "text modes" discussed below. If it is not specified it defaults to the width of your
