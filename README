@@ -10,7 +10,7 @@ Then to build the program simply run make
 
 usage:
 
-beditd [-e <encoding>] [<file> [<width or mode>]]
+beditd [-p] [-e <encoding>] [<file> [<width or mode>]]
 
 Beditd is a binary file editor where each byte in the file is represented by a
 character on the screen. It is not a hex editor or a text editor. It requires a
@@ -24,7 +24,10 @@ byte value at the cursor and the current location in the file.
 
 The default symbol set is based on (but not identical to) MS DOS code page 437.
 Alternatively the user may specify a single-byte ASCII-based encoding supported
-by iconv and the editor will use it to generate a symbol set.
+by iconv and the editor will use it to generate a symbol set. 
+
+The "p" option uses the "control pictures" unicode characters instead of the 
+default symbols to represent byte values $00 to $1F.
 
 The <width or mode> setting can be either a width in characters or one of the
 "text modes" discussed below. If it is not specified it defaults to the width of your

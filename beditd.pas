@@ -344,24 +344,41 @@ var
   oldsl : tstringlist;
   lip : string;
   tempfileoffset : integer;
+  hexstr : string;
+  enablecontrolpictures : boolean;
 Begin
+  enablecontrolpictures := false;
+  for i := 0 to $1F do begin
+     cc[char(i)] := #$e2 + char($90 + (i shr 6))+char($80+(i and $3f));
+     //writeln(length(cc[char(i)]));
+  end;
+  //halt(1);
   enabletestdata := false;
   textmode := false;
   lineending := '';
   o:=#0;
   repeat
-     o:=GetOpt('+e:t');
+     o:=GetOpt('+e:tp');
      case o of
         'e':encoding:=optarg;
         't':enabletestdata := true;
+        'p':encablecontrolpictures := true;
      end;
   until o=endofoptions;
+
+  if enablecontrolpictures then for i := 0 to $1F do begin
+     cc[char(i)] := #$e2 + char($90 + (i shr 6))+char($80+(i and $3f));
+     //writeln(length(cc[char(i)]));
+  end
 
   fillchar(reverse,65536,'A');
   for i := 0 to 255 do begin
     codepoint := decodeutf8char(cc[char(i)]);
     if codepoint < 0 then begin
-      writeln('could not decode utf-8 sequence');
+      hexstr := inttohex(ord(cc[char(i)][1]),2);
+      if length(hexstr) >= 2 then hexstr := hexstr + ' ' + inttohex(ord(cc[char(i)][2]),2);
+      if length(hexstr) >= 3 then hexstr := hexstr + ' ' + inttohex(ord(cc[char(i)][3]),2);
+      writeln('could not decode utf-8 sequence '+ hexstr);
       halt(1);
     end;
     reverse[codepoint] := i;
