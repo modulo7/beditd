@@ -44,7 +44,9 @@ const cc:array[char] of utf8char= (#$E2#$88#$85,#$E2#$98#$BA,#$E2#$98#$BB,#$E2#$
     //  wcc:array[0..$FF] of word=($2205,$263A,$263B,$2665,$2666,$2663,$2660,$2022,$25D8,$25CB,$25D9,$2642,$2640,$266A,$266B,$263C,$25BA,$25C4,$2195,$203C,$00B6,$00A7,$25AC,$21A8,$2191,$2193,$2192,$2190,$221F,$2194,$25B2,$25BC,$0020,$0021,$0022,$0023,$0024,$0025,$0026,$0027,$0028,$0029,$002A,$002B,$002C,$002D,$002E,$002F,$0030,$0031,$0032,$0033,$0034,$0035,$0036,$0037,$0038,$0039,$003A,$003B,$003C,$003D,$003E,$003F,$0040,$0041,$0042,$0043,$0044,$0045,$0046,$0047,$0048,$0049,$004A,$004B,$004C,$004D,$004E,$004F,$0050,$0051,$0052,$0053,$0054,$0055,$0056,$0057,$0058,$0059,$005A,$005B,$005C,$005D,$005E,$005F,$0060,$0061,$0062,$0063,$0064,$0065,$0066,$0067,$0068,$0069,$006A,$006B,$006C,$006D,$006E,$006F,$0070,$0071,$0072,$0073,$0074,$0075,$0076,$0077,$0078,$0079,$007A,$007B,$007C,$007D,$007E,$2302,$00C7,$00FC,$00E9,$00E2,$00E4,$00E0,$00E5,$00E7,$00EA,$00EB,$00E8,$00EF,$00EE,$00EC,$00C4,$00C5,$00C9,$00E6,$00C6,$00F4,$00F6,$00F2,$00FB,$00F9,$00FF,$00D6,$00DC,$00A2,$00A3,$00A5,$20A7,$0192,$00E1,$00ED,$00F3,$00FA,$00F1,$00D1,$00AA,$00BA,$00BF,$2310,$00AC,$00BD,$00BC,$00A1,$00AB,$00BB,$2591,$2592,$2593,$2502,$2524,$2561,$2562,$2556,$2555,$2563,$2551,$2557,$255D,$255C,$255B,$2510,$2514,$2534,$252C,$251C,$2500,$253C,$255E,$255F,$255A,$2554,$2569,$2566,$2560,$2550,$256C,$2567,$2568,$2564,$2565,$2559,$2558,$2552,$2553,$256B,$256A,$2518,$250C,$2588,$2584,$258C,$2590,$2580,$03B1,$03B2,$0393,$03C0,$03A3,$03C3,$03BC,$03C4,$03A6,$0398,$03A9,$03B4,$221E,$03C6,$03B5,$2229,$2261,$00B1,$2265,$2264,$2320,$2321,$00F7,$2248,$00B0,$2219,$00B7,$221A,$207F,$00B2,$25A0,$2605);
 
     enabledebugout = false;
-    
+    KEY_F21= 285;
+    KEY_F33= 297;
+    KEY_F45= 309;
     bottombarheight = 2;
 var
   reverse : array[0..65535] of byte;
@@ -346,6 +348,8 @@ var
   tempfileoffset : integer;
   hexstr : string;
   enablecontrolpictures : boolean;
+  tlw: longint;
+  ttextmode: boolean;
 Begin
   enablecontrolpictures := false;
   enabletestdata := false;
@@ -686,43 +690,67 @@ Begin
            erase();
            removeselection;
         end;
-        KEY_F9:Begin
-           if textmode then begin
-              oldsl := sl;
-              sl := tstringlist.create();
-              lip := '';
-              for i := 0 to oldsl.count -1 do begin
-                 lip := processtext(lip,oldsl[i],nil);
-              end;
-              sl.add(lip);
-              oldsl.free;
-              i := 0;
-              tempfileoffset := 0;
-              while tempfileoffset < fileoffset do begin
-                 tempfileoffset := tempfileoffset + length(sl[i]);
-                 i := i + 1;;
-              end;
-              i := i - 1;
-              tempfileoffset := tempfileoffset - length(sl[i]);
-              cy := i;
-              cx := fileoffset - tempfileoffset;
-           end else begin
-              c:=0;
-              s:='';
-              while (c<sl.Count) do Begin
-                 while length(s)<lw do Begin
-                    s:=s+sl[c];
-                    sl.Delete(c);
-                    if c>=sl.Count then Break;
+        KEY_F9,KEY_F21,KEY_F33,KEY_F45:Begin
+           try
+              tlw:=lw;
+              ttextmode:=textmode;
+              if (ch <> KEY_F33) or (ch <> KEY_F45) then Begin
+                 action := upcase(gs(0,bottombarstart,'W:',maxlongint));
+                 if upcase(action) = 'T' then begin
+                    ttextmode := true;
+                    tlw := 4096;
+                 end else begin;
+                    tlw:=strtoint(action);
+                    ttextmode := false;
                  end;
-                 sl.Insert(c,copy(s,0,lw));
-                 s:=copy(s,lw+1,length(s));
-                 c:=c+1;
               end;
-              cy := fileoffset div lw;
-              cx := fileoffset mod lw;
+              if ch = KEY_F45 then ch := KEY_F21;
+              c:=0;
+              if ch <> KEY_F21 then c:=cy;
+              if ttextmode then begin
+                 oldsl := sl;
+                 sl := tstringlist.create();
+                 lip := '';
+                 for i := 0 to c-1 do
+                    sl.add(oldsl[i]);
+                 for i := c to oldsl.count -1 do begin
+                    lip := processtext(lip,oldsl[i],nil);
+                 end;
+                 sl.add(lip);
+                 oldsl.free;
+                 i := 0;
+                 tempfileoffset := 0;
+                 while tempfileoffset < fileoffset do begin
+                    tempfileoffset := tempfileoffset + length(sl[i]);
+                    i := i + 1;;
+                 end;
+                 i := i - 1;
+                 tempfileoffset := tempfileoffset - length(sl[i]);
+                 cy := i;
+                 cx := fileoffset - tempfileoffset;
+              end else begin
+                 s:='';
+                 while (c<sl.Count) do Begin
+                    while length(s)<tlw do Begin
+                       s:=s+sl[c];
+                       sl.Delete(c);
+                       if c>=sl.Count then Break;
+                    end;
+                    sl.Insert(c,copy(s,0,tlw));
+                    s:=copy(s,tlw+1,length(s));
+                    c:=c+1;
+                 end;
+                 if ch = KEY_F21 then Begin
+                    cy := fileoffset div tlw;
+                    cx := fileoffset mod tlw;
+                 end;
+              end;
+              erase();
+           except
+              on E: Exception do begin
+                 showmessage(e.message);
+              end
            end;
-           erase();
         end;
         KEY_F2,
         KEY_F12:Begin
